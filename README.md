@@ -73,27 +73,52 @@ Before running the script, ensure your directory looks like this:
 └── found_fragments_colored_/ # [OUTPUT] Results will appear here
 ```
 
-## ⚙️ Configuration
+## ⚙️ Configuration Guide
 
-Open `main.py` and adjust the **SETTINGS** section at the top to match your hardware capabilities:
+All settings are located at the top of `main.py`. Here is a detailed explanation of every parameter.
+
+### 1. Hardware & Performance
+These settings control how the script utilizes your CPU and GPU.
+
+| Variable | Description | Recommended |
+| :--- | :--- | :--- |
+| `NUM_GPU_PROCESSES` | Number of independent Python processes accessing the GPU. | `1` or `2` (Depends on VRAM) |
+| `GPU_WORKER_THREADS` | Number of concurrent threads inside *each* GPU process. | `2` to `4` |
+| `NUM_CPU_LOADERS` | Number of CPU processes decoding video frames. | `4` to `8` |
+| `BATCH_SIZE` | How many frames are sent to the GPU inference engine at once. Higher = faster but more VRAM. | `8` to `32` |
+| `MAX_BUFFER_SLOTS` | Size of the Shared Memory Ring Buffer. Prevents loader stalling. | `512` to `2048` |
+| `REC_CHUNK_SIZE` | Batch size specifically for the Recognition (Embedding) model. | `64` to `128` |
+
+### 2. Detection & Recognition Logic
+Settings that affect accuracy and which faces are detected.
 
 ```python
-# ==========================================
-#               SETTINGS
-# ==========================================
-NUM_GPU_PROCESSES = 2       # Number of independent processes on the GPU
-GPU_WORKER_THREADS = 3      # Threads per GPU process (Parallel inference)
-NUM_CPU_LOADERS = 6         # CPU processes for decoding video frames
-BATCH_SIZE = 20             # Number of faces/frames processed at once
-CUSTOM_THRESHOLD = 0.49     # Similarity threshold (Lower = Stricter, 0.4-0.6 typical)
-DET_SIZE = (1440, 1400)     # Input resolution for the detector. (640,640) is standard. (1440,1440) for 4K small faces.
-MAX_BUFFER_SLOTS = 2048     # Size of the Shared Memory Ring Buffer. Prevents loader stalling.
-
-# Video Slicing Settings
-FRAME_INTERVAL = 2          # Process every Nth frame (1 = all frames)
-CLIP_DURATION_BEFORE = 1.0  # Seconds to save before the face appears
-CLIP_DURATION_AFTER = 2.0   # Seconds to save after the face disappears
+MODEL_PACK_NAME = 'buffalo_l'      # InsightFace model pack ('buffalo_l' is accurate, 'buffalo_s' is fast)
+DET_SIZE = (640, 640)              # Input resolution for the detector. (640,640) is standard. (1440,1440) for 4K small faces.
+CUSTOM_THRESHOLD = 0.49            # Cosine similarity threshold. Lower (e.g. 0.40) is stricter. Higher (0.60) allows more errors.
+PRE_UPSCALE_FACTOR = 1.0           # 1.0 = Native resolution. >1.0 upscales image before detection (slow).
+BOX_PADDING_PERCENTAGE = 0.3       # Expands the bounding box by 30% to capture full head/hair.
 ```
+
+### 3. Video Processing & Slicing
+Settings controlling how the video is read and how the results are saved.
+
+```python
+FRAME_INTERVAL = 1          # 1 = Process every frame. 2 = Process every 2nd frame (2x speedup).
+CLIP_DURATION_BEFORE = 1.0  # Seconds of video to save BEFORE the face appears.
+CLIP_DURATION_AFTER = 10.0  # Seconds of video to save AFTER the face disappears.
+MERGE_GAP_TOLERANCE = 12.0  # If two detections are within 12s of each other, merge them into one long clip.
+```
+
+### 4. Advanced / Debugging
+These settings are found inside the `settings` dictionary within the `run()` function.
+
+| Key | Description |
+| :--- | :--- |
+| `det_prob_threshold` | (Default `0.25`) Minimum probability for a generic "face" to be considered a face. |
+| `debug_det` | `True` enables saving debug images of raw detection (without recognition). |
+| `debug_det_dir` | Folder to save debug artifacts. |
+| `debug_rec` | `True` enables logging of raw embedding distances. |
 
 ## ▶️ Usage
 
