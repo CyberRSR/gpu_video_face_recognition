@@ -1,4 +1,3 @@
-```markdown
 # SuperFast Face Recognition (GPU/TensorRT)
 
 A high-performance, industrial-grade video face recognition system utilizing **Python**, **InsightFace**, **TensorRT**, and **Multiprocessing**.
@@ -122,4 +121,4 @@ The results are saved in `found_fragments_colored_/`:
 ## 📄 License
 
 MIT License. See [LICENSE](LICENSE) for more information.
-```
+'''
